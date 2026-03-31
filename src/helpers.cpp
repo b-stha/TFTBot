@@ -78,6 +78,10 @@ std::string getRankField(const Player& player, const Data& data, std::string que
 			return data.getEmote(lowerCase("UNRANKED")) + " UNRANKED ";
 		}
 		playerTier = player.getRank().first;
+		
+		if (playerTier == "MASTER" || playerTier == "GRANDMASTER" || playerTier == "CHALLENGER") {
+			return data.getEmote(lowerCase(playerTier)) + " " + playerTier + " (" + std::to_string(player.getRankedLP().second) + " LP)";
+		}
 		return data.getEmote(lowerCase(playerTier)) + " " + playerTier + " " + player.getRank().second + " (" + std::to_string(player.getRankedLP().second) + " LP)";
 	}
 
