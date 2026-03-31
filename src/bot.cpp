@@ -382,10 +382,10 @@ void Bot::createUnrankedEmbed(const Player& player, const Data& data) {
 dpp::embed Bot::createPromoMsg(const Player& player, const Data& data, std::string queueType) {
 	std::string playerTier = "";
 	if (queueType == "DOUBLE_UP") {
-		std::string playerTier = player.getDoubleUpRank().first;
+		playerTier = player.getDoubleUpRank().first;
 	}
 	else if (queueType == "RANKED") {
-		std::string playerTier = player.getRank().first;
+		playerTier = player.getRank().first;
 	}
 	std::string name = player.getFullName()[0];
 	dpp::embed promoEmbed = dpp::embed()
