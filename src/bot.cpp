@@ -244,6 +244,11 @@ void Bot::createRankedEmbed(const Player& player, const Data& data) {
 	std::string matchResultURL = profileURL + player.getCurrMatchID();
 	//std::string augmentList = augListStr(player);
 	std::string playerTier = player.getRank().first;
+	std::vector<int> playTime = player.getTime();
+	std::ostringstream timeOss;
+	timeOss << std::setw(2) << std::setfill('0') << playTime[0]
+	    << ":"
+	    << std::setw(2) << std::setfill('0') << playTime[1];
 	dpp::embed outEmbed = dpp::embed()
 		.set_color(data.getRankColor().at(playerTier))
 		.set_title(data.getPlacementData().at(player.getMatchInfo().placement) + " PLACE")
@@ -253,7 +258,7 @@ void Bot::createRankedEmbed(const Player& player, const Data& data) {
 		.add_field(
 			getRankField(player, data, "RANKED"),
 			"\n"
-			"Duration: " + std::to_string(player.getTime()[0]) + ":" + std::to_string(player.getTime()[1]) + "\n"
+			"Duration: " + timeOss.str() + "\n"
 			"Level: " + std::to_string(player.getMatchInfo().level) + "\n"
 			"Gold Left: " + std::to_string(player.getMatchInfo().goldLeft) + "\n"
 			"Board Value: " + std::to_string(player.getMatchInfo().boardValue),
