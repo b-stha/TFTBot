@@ -1,3 +1,9 @@
+/* 
+Highest level object that starts the Discord bot and smaller objects.
+Stores all of the loaded game data, map of added users, Riot API handler object, and Worker object.
+Contains some helper functions for formatting data into Discord embeds.
+*/
+
 #ifndef BOT_H
 #define BOT_H
 
@@ -17,7 +23,7 @@ public:
     Bot();
     dpp::cluster& getBotCluster() { return botCluster; }
     Riot& getRiotObj() { return riotAPI; }
-    std::vector<std::shared_ptr<Player>> getUserSnapshot();
+    std::vector<std::shared_ptr<Player>> getUserSnapshot(); // Returns a snapshot of the current users to avoid locking.
     void unitListStr(const Player& player, dpp::embed& embedObj, const Data& data);
     void traitListStr(const Player& player, dpp::embed& embedObj, const Data& data);
     std::string augListStr(const Player& player, const Data& data);

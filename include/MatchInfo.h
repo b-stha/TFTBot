@@ -1,3 +1,10 @@
+/*
+Object to hold temporary match information for each player.
+Updated after each new match and used to create Discord embeds.
+Includes Unit and Trait structs to hold relevant info for future embedding.
+from_json functions to convert from JSON to C++ objects using nlohmann/json library.
+*/
+
 #ifndef MATCHINFO_H
 #define MATCHINFO_H
 

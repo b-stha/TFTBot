@@ -1,3 +1,8 @@
+/*
+Class Riot handles Riot API interactions.
+Fetches information using DPP's built in HTTP client asynchronously and updates Player objects.
+*/
+
 #ifndef RIOTAPI_H
 #define RIOTAPI_H
 
@@ -19,7 +24,7 @@ public:
     void fetchLeague(std::shared_ptr<Player> pPlayer, std::function<void(bool)> next = {});
 
 private:
-    dpp::cluster& botCluster;
+    dpp::cluster& botCluster; // Reference to the bot cluster to make API calls.
     std::string apiKey;
 };
 
