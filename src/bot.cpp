@@ -207,13 +207,28 @@ void Bot::unitListStr(const Player& player, dpp::embed& embedObj, const Data& da
 void Bot::traitListStr(const Player& player, dpp::embed& embedObj, const Data& data) {
 	for (const auto& trait : player.getMatchInfo().traits) {
 		if (trait.style != 0) {
-			std::string traitName, traitIcon;
+			std::string traitName, traitIcon, traitAPIName = trait.apiName;
 			int currBreakpoint;
 			const auto& traitData = data.getTraitData();
-			const auto it = traitData.find(trait.apiName);
+			const auto it = traitData.find(traitAPIName);
+
 			if (it != traitData.end()) {
 				traitName = it->second.name;
-				std::string emojiName = lowerCase(trait.apiName) + "_" + std::to_string(trait.style);
+				
+				// Set 17's Stargazer trait has multiple API names for each Stargazer path
+				// "TFT17_Stargazer_Medallion", "TFT17_Stargazer_Mountain"... -> "TFT17_Stargazer"
+				if (traitAPIName == "TFT17_Stargazer_Medallion" || 
+					traitAPIName == "TFT17_Stargazer_Mountain" || 
+					traitAPIName == "TFT17_Stargazer_Wolf" ||
+					traitAPIName == "TFT17_Stargazer_Huntress" ||
+					traitAPIName == "TFT17_Stargazer_Serpent" ||
+					traitAPIName == "TFT17_Stargazer_Shield" ||
+					traitAPIName == "TFT17_Stargazer_Fountain"
+				) {
+					traitAPIName = "TFT17_Stargazer";
+				}
+
+				std::string emojiName = lowerCase(traitAPIName) + "_" + std::to_string(trait.style);
 				traitIcon = data.getEmote(emojiName);
 				int traitIdx = trait.level - 1;
 				const auto& breakpoints = it->second.breakpoints;
