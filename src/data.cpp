@@ -39,6 +39,7 @@ const std::string Data::getEmote(std::string emoteName) const {
 	if (it != emoteMap.end()) {
 		return it->second;
 	} else {
+		std::cout << "Emote not found: " << emoteName << std::endl;
 		std::string defaultEmote = "<:steamhappy:1123798178030964848>";
 		return defaultEmote;
 	}
