@@ -21,11 +21,17 @@ std::optional<std::string> Data::getJsonStr(const nlohmann::json& j, const std::
 std::optional<int> Data::getJsonInt(const nlohmann::json& j, const std::string& key) const{
 	if (j.contains(key) && j[key].is_number_integer()) {
 		return j[key].get<int>();
-	}
-	return std::nullopt;
+	}return std::nullopt;
 }
 
 const std::string Data::getEmote(std::string emoteName) const {
+	// Set 17's Anima Squad items are too long for Discord's emoji name limit
+	// "animasquaditem" -> "asi"
+	size_t animaPos = emoteName.find("animasquaditem");
+	if (animaPos != std::string::npos) {
+		emoteName.replace(animaPos, std::string("animasquaditem").length(), "asi");
+	}
+
 	if (emoteName.length() > 32) {
 		emoteName.erase(32, std::string::npos);
 	}
@@ -110,7 +116,7 @@ std::future<void> Data::loadSetData(dpp::cluster& cluster) {
 					<< "\nbody: " << http.body << std::endl;
 			return;
 		}
-		std::string latestSet = "16";
+		std::string latestSet = "17";
 
 		this->unitData = loadUnitData(dataJson, latestSet);
 		this->traitData = loadTraitData(dataJson, latestSet);
