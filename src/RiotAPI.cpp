@@ -17,36 +17,37 @@ void Riot::fetchMatchID(std::shared_ptr<Player> pPlayer, std::function<void(bool
 			std::cout <<"Match ID HTTP request failed with status: " + std::to_string(http.status) << std::endl;
 			std::cout << "url: " << matchIDurl << std::endl;
 			std::cout << "body: " << http.body << std::endl;
-			next(false);
+			if (next) next(false);
 			return;
 		}
 
-		json matchIDJson;
 		try {
 			std::cout << "Request URL: " << matchIDurl << "\n";
 			std::cout << "HTTP Status: " << http.status << "\n";
 			std::cout << "HTTP Body: " << http.body << "\n";
-			matchIDJson = json::parse(http.body);
-		} catch (const json::parse_error& e) {
-			std::cerr << "JSON parse error for url:" << matchIDurl << " - " << e.what() << "\nbody: " << http.body << std::endl;
-			next(false);
-			return;
-		}
+			json matchIDJson = json::parse(http.body);
 
-		if (matchIDJson.empty()) {
-			std::cout << "No matches found for player with PUUID: " + pPlayer->getPUUID() << std::endl;
-			next(false);
-			return;
+			if (!matchIDJson.is_array() || matchIDJson.empty()) {
+				std::cout << "No matches found for player with PUUID: " + pPlayer->getPUUID() << std::endl;
+				if (next) next(false);
+				return;
+			}
+
+			std::string latestMatchID = matchIDJson[0].get<std::string>();
+			if (latestMatchID == pPlayer->getCurrMatchID()) {
+				std::cout << "No new match found for player with PUUID: " + pPlayer->getPUUID() << std::endl;
+				if (next) next(false);
+				return;
+			}
+
+			pPlayer->setPrevMatch(pPlayer->getCurrMatchID());
+			pPlayer->setCurrMatch(latestMatchID);
+			if (next) next(true);
+		} catch (const json::exception& e) {
+			// Covers parse failures and any missing/malformed fields in the response.
+			std::cerr << "JSON error for url:" << matchIDurl << " - " << e.what() << "\nbody: " << http.body << std::endl;
+			if (next) next(false);
 		}
-		if (matchIDJson[0].get<std::string>() == pPlayer->getCurrMatchID()) {
-			std::cout << "No new match found for player with PUUID: " + pPlayer->getPUUID() << std::endl;
-			next(false);
-			return;
-		}
-		
-		pPlayer->setPrevMatch(pPlayer->getCurrMatchID());
-		pPlayer->setCurrMatch(matchIDJson[0].get<std::string>());
-		next(true);
 	});
 }
 
@@ -57,37 +58,47 @@ void Riot::fetchInfo(std::shared_ptr<Player> pPlayer, std::function<void(bool)> 
 			std::cout <<"Match info HTTP request failed with status: " + std::to_string(http.status) << std::endl;
 			std::cout << "url: " << infoURL << std::endl;
 			std::cout << "body: " << http.body << std::endl;
-			next(false);
+			if (next) next(false);
 			return;
 		}
 
-		json matchJson;
 		try {
 			std::cout << "Request URL: " << infoURL << "\n";
 			std::cout << "HTTP Status: " << http.status << "\n";
 			std::cout << "HTTP Body: " << http.body << "\n";
-			matchJson = json::parse(http.body);
-		} catch (const json::parse_error& e) {
-			std::cerr << "JSON parse error for url:" << infoURL << " - " << e.what() << "\nbody: " << http.body << std::endl;
-			next(false);
-			return;
-		}
+			json matchJson = json::parse(http.body);
 
-		json allInfo = matchJson["info"];
-		MatchInfo matchInfo;
-		for (const json participant : allInfo["participants"]) {
-			if (pPlayer->getPUUID() == participant["puuid"].get<std::string>()) {
-				matchInfo = participant.get<MatchInfo>();
-				double totalSeconds = participant["time_eliminated"].get<double>();
-				matchInfo.gameLenMin = static_cast<int>(totalSeconds / 60);
-				matchInfo.gameLenSec = static_cast<int>(totalSeconds) % 60;
-				matchInfo.boardValue = matchInfo.calcBoardValue();
-				matchInfo.queueID = allInfo["queue_id"].get<int>();	
+			const json& allInfo = matchJson.at("info");
+			const json& participants = allInfo.at("participants");
+
+			bool found = false;
+			MatchInfo matchInfo;
+			for (const json& participant : participants) {
+				if (pPlayer->getPUUID() == participant.at("puuid").get<std::string>()) {
+					matchInfo = participant.get<MatchInfo>();
+					double totalSeconds = participant.at("time_eliminated").get<double>();
+					matchInfo.gameLenMin = static_cast<int>(totalSeconds / 60);
+					matchInfo.gameLenSec = static_cast<int>(totalSeconds) % 60;
+					matchInfo.boardValue = matchInfo.calcBoardValue();
+					matchInfo.queueID = allInfo.at("queue_id").get<int>();
+					found = true;
+					break;
+				}
 			}
-		}
 
-		pPlayer->setMatchInfo(matchInfo);
-		next(true);
+			if (!found) {
+				// Player not present in the match response counts as invalid data, not success.
+				std::cout << "Player with PUUID: " << pPlayer->getPUUID() << " not found in match participants." << std::endl;
+				if (next) next(false);
+				return;
+			}
+
+			pPlayer->setMatchInfo(matchInfo);
+			if (next) next(true);
+		} catch (const json::exception& e) {
+			std::cerr << "JSON error for url:" << infoURL << " - " << e.what() << "\nbody: " << http.body << std::endl;
+			if (next) next(false);
+		}
 	});
 };
 
@@ -126,24 +137,21 @@ void Riot::fetchPUUID(const std::string& name, const std::string& tag, std::func
 			std::cout <<"PUUID HTTP request failed with status: " + std::to_string(http.status) << std::endl;
 			std::cout << "url: " << idURL << std::endl;
 			std::cout << "body: " << http.body << std::endl;
+			if (next) next("");
 			return;
 		}
 
-		json idJson;
 		try {
 			std::cout << "Request URL: " << idURL << "\n";
 			std::cout << "HTTP Status: " << http.status << "\n";
 			std::cout << "HTTP Body: " << http.body << "\n";
-			idJson = json::parse(http.body);
-		} catch (const json::parse_error& e) {
-			std::cerr << "JSON parse error for url:" << idURL << " - " << e.what() << "\nbody: " << http.body << std::endl;
-			return;
-		}
-
-		std::string puuid = idJson["puuid"].get<std::string>();
-		std::cout << "puuid: " << puuid << std::endl;
-		if (next) {
-			next(puuid);
+			json idJson = json::parse(http.body);
+			std::string puuid = idJson.at("puuid").get<std::string>();
+			std::cout << "puuid: " << puuid << std::endl;
+			if (next) next(puuid);
+		} catch (const json::exception& e) {
+			std::cerr << "JSON error for url:" << idURL << " - " << e.what() << "\nbody: " << http.body << std::endl;
+			if (next) next("");
 		}
 	});
 }
@@ -182,46 +190,44 @@ void Riot::fetchLeague(std::shared_ptr<Player> pPlayer, std::function<void(bool)
 			std::cout <<"League HTTP request failed with status: " + std::to_string(http.status) << std::endl;
 			std::cout << "url: " << leagueURL << std::endl;
 			std::cout << "body: " << http.body << std::endl;
-			next(false);
+			if (next) next(false);
 			return;
 		}
 
-		json leagueJson;
 		try {
 			std::cout << "Request URL: " << leagueURL << "\n";
 			std::cout << "HTTP Status: " << http.status << "\n";
 			std::cout << "HTTP Body: " << http.body << "\n";
-			leagueJson = json::parse(http.body);
+			json leagueJson = json::parse(http.body);
 			std::cout << leagueJson.dump(2) << std::endl;
-		} catch (const json::parse_error& e) {
-			std::cerr << "JSON parse error for url:" << leagueURL << " - " << e.what() << "\nbody: " << http.body << std::endl;
-			next(false);
-			return;
-		}
 
-		if (leagueJson.empty()) {
-			std::cout << "No league data found for player with PUUID: " + pPlayer->getPUUID() << std::endl;
-			next(false);
-			return;
-		}
-		
-		if (pPlayer->getAllRanks().empty()) {
-			std::vector<League> initLeagues(2);
-			pPlayer->setPlayerLeague(initLeagues);
-		}
-
-		for (const json& leagueEntry : leagueJson) {
-			std::string queueType = leagueEntry["queueType"].get<std::string>();
-			if (queueType == "RANKED_TFT_DOUBLE_UP") {
-				pPlayer->updateDoubleUpLP(leagueEntry["leaguePoints"].get<int>());
-				pPlayer->updateDoubleUpTier(leagueEntry["tier"].get<std::string>(), leagueEntry["rank"].get<std::string>());
+			if (!leagueJson.is_array() || leagueJson.empty()) {
+				std::cout << "No league data found for player with PUUID: " + pPlayer->getPUUID() << std::endl;
+				if (next) next(false);
+				return;
 			}
-			else if (queueType == "RANKED_TFT") {
-				pPlayer->updateRankedLP(leagueEntry["leaguePoints"].get<int>());
-				pPlayer->updateRankedTier(leagueEntry["tier"].get<std::string>(), leagueEntry["rank"].get<std::string>());
-			}
-		}
 
-		next(true);
+			if (pPlayer->getAllRanks().empty()) {
+				std::vector<League> initLeagues(2);
+				pPlayer->setPlayerLeague(initLeagues);
+			}
+
+			for (const json& leagueEntry : leagueJson) {
+				std::string queueType = leagueEntry.at("queueType").get<std::string>();
+				if (queueType == "RANKED_TFT_DOUBLE_UP") {
+					pPlayer->updateDoubleUpLP(leagueEntry.at("leaguePoints").get<int>());
+					pPlayer->updateDoubleUpTier(leagueEntry.at("tier").get<std::string>(), leagueEntry.at("rank").get<std::string>());
+				}
+				else if (queueType == "RANKED_TFT") {
+					pPlayer->updateRankedLP(leagueEntry.at("leaguePoints").get<int>());
+					pPlayer->updateRankedTier(leagueEntry.at("tier").get<std::string>(), leagueEntry.at("rank").get<std::string>());
+				}
+			}
+
+			if (next) next(true);
+		} catch (const json::exception& e) {
+			std::cerr << "JSON error for url:" << leagueURL << " - " << e.what() << "\nbody: " << http.body << std::endl;
+			if (next) next(false);
+		}
 	});
 }

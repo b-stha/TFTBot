@@ -48,6 +48,10 @@ void Bot::registerCommands() {
 			auto eventCopy = event;
 			auto data = this->getLoadedData();
 			riotAPI.fetchPUUID(userInputArr[0], userInputArr[1], [this, name, currChannel, userInputArr, eventCopy, queueOpt, data](const std::string& puuid) {
+				if (puuid.empty()) {
+					eventCopy.reply("Could not find a Riot account for " + name + ".");
+					return;
+				}
 				bool isNewUser = false;
 				std::shared_ptr<Player> pPlayer;
 				{
