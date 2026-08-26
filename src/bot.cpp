@@ -1,13 +1,12 @@
 #include "bot.h"
 #include "RiotAPI.h"
-#include "apikeys.h"
 #include "data.h"
 #include "Player.h"
 #include "helpers.h"
 #include "Worker.h"
 
-Bot::Bot()
-		: botCluster(BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content), riotAPI(botCluster, TFT_APIKEY), pWorker(std::make_unique<Worker>(this)){
+Bot::Bot(const std::string& botToken, const std::string& riotApiKey)
+		: botCluster(botToken, dpp::i_default_intents | dpp::i_message_content), riotAPI(botCluster, riotApiKey), pWorker(std::make_unique<Worker>(this)){
 	;
 	botCluster.on_log(dpp::utility::cout_logger());
 	readyHandler();

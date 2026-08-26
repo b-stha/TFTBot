@@ -1,5 +1,11 @@
 build/
+_deps/
 CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+Makefile
 
+include/apikeys.h
 apikeys.h
 src/todo.txt

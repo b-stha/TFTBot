@@ -1,21 +1,43 @@
 #include "Player.h"
 #include "RiotAPI.h"
 #include "bot.h"
-#include "apikeys.h"
 #include "Worker.h"
 #include "data.h"
 #include <dpp/dpp.h>
 #include <atomic>
 #include <memory>
+#include <cstdlib>
 
 std::atomic <bool> running = false;
+
+namespace {
+std::string readEnvOrEmpty(const char* name) {
+    const char* value = std::getenv(name);
+    return value != nullptr ? value : "";
+}
+}
 
 void stop() {
     running = false;
 }
 
 int main() {
-    Bot mittens;
+    const std::string botToken = readEnvOrEmpty("BOT_TOKEN");
+    const std::string riotApiKey = readEnvOrEmpty("TFT_APIKEY");
+
+    if (botToken.empty()) {
+        std::cerr << "Missing required environment variable: BOT_TOKEN" << std::endl;
+    }
+
+    if (riotApiKey.empty()) {
+        std::cerr << "Missing required environment variable: TFT_APIKEY" << std::endl;
+    }
+
+    if (botToken.empty() || riotApiKey.empty()) {
+        return 1;
+    }
+
+    Bot mittens(botToken, riotApiKey);
     mittens.run();
 
     signal(SIGINT, [](int code) {

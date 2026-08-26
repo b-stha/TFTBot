@@ -4,6 +4,11 @@ Written in C++, using the DPP library. Currently a work in progress.
 
 <img width="561" height="647" alt="image" src="https://github.com/user-attachments/assets/f5ce85e9-6cbc-41cd-9c00-c8fa8287f0cb" />
 
+Configuration:
+- Set `BOT_TOKEN` to the Discord bot token
+- Set `TFT_APIKEY` to the Riot API key
+- `include/apikeys.h` is no longer used by the application
+
 Features:
 - Post-game information
 - Rank and LP

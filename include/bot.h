@@ -20,7 +20,7 @@ struct Worker;
 
 class Bot {
 public:
-    Bot();
+    Bot(const std::string& botToken, const std::string& riotApiKey);
     dpp::cluster& getBotCluster() { return botCluster; }
     Riot& getRiotObj() { return riotAPI; }
     std::vector<std::shared_ptr<Player>> getUserSnapshot(); // Returns a snapshot of the current users to avoid locking.

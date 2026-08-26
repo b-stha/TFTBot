@@ -47,7 +47,7 @@ const std::string Data::getEmote(std::string emoteName) const {
 
 const std::string Data::getTacticianIcon(int id) const {
 	auto it = tacticianMap.find(id);
-	if (it != tacticianMap.end()) {
+	if (it != tacticianMap.end()) {	
 		std::string iconName = std::filesystem::path(it->second).filename().string();
 		iconName = lowerCase(iconName);
 		std::string url = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/loadouts/companions/" + 
