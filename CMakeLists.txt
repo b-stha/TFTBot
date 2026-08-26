@@ -8,10 +8,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/)
 
-set(OPENSSL_ROOT_DIR "/usr" CACHE PATH "OpenSSL root dir")
-set(OPENSSL_INCLUDE_DIR "/usr/include" CACHE PATH "OpenSSL include dir")
-set(OPENSSL_CRYPTO_LIBRARY "/usr/lib/aarch64-linux-gnu/libcrypto.so" CACHE FILEPATH "OpenSSL crypto library")
-set(OPENSSL_SSL_LIBRARY "/usr/lib/aarch64-linux-gnu/libssl.so" CACHE FILEPATH "OpenSSL ssl library")
 
 find_package(OpenSSL REQUIRED)
 message(STATUS "OpenSSL Include: ${OPENSSL_INCLUDE_DIR}")
