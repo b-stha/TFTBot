@@ -11,10 +11,15 @@ void Worker::startTask() {
         if (isRunning || playerQueue.empty()) {
             return;
         }
-        isRunning = true;
+
         currPlayer = playerQueue.front();
+        if (!currPlayer || currPlayer->getPUUID().empty()) {
+            playerQueue.pop();
+            return;
+        }
+
         playerQueue.pop();
-        queuedOrRunningPuuids.erase(currPlayer->getPUUID());
+        isRunning = true;
         activePuuid = currPlayer->getPUUID();
     }
 
@@ -27,7 +32,7 @@ void Worker::startTask() {
         this->finishTask();
     };
 
-    pMittens->getRiotObj().fetchMatchID(currPlayer, [this, currPlayer, finishSafely](bool matchFetched) mutable{
+    pMittens->getRiotObj().fetchMatchID(currPlayer, [this, currPlayer, finishSafely](bool matchFetched) mutable {
         if (!matchFetched) {
             finishSafely();
             return;
@@ -58,7 +63,7 @@ void Worker::startTask() {
                             break;
                     }
                 }
-                finishTask();
+                finishSafely();
             });
         });
     });
@@ -68,6 +73,10 @@ void Worker::finishTask() {
     bool shouldStartAnother = false;
     {
         std::lock_guard<std::mutex> lock(queueMutex);
+        if (!activePuuid.empty()) {
+            queuedOrRunningPuuids.erase(activePuuid);
+            activePuuid.clear();
+        }
         isRunning = false;
         shouldStartAnother = !playerQueue.empty();
     }
@@ -85,13 +94,16 @@ bool Worker::enqueue(const std::shared_ptr<Player>& player) {
     if (!player) return false;
 
     const std::string puuid = player->getPUUID();
+    if (puuid.empty()) {
+        return false;
+    }
 
     std::lock_guard<std::mutex> lock(queueMutex);
     if (queuedOrRunningPuuids.contains(puuid)) {
         return false;
     }
 
-    playerQueue.push(player);
     queuedOrRunningPuuids.insert(puuid);
+    playerQueue.push(player);
     return true;
 }

@@ -25,9 +25,9 @@ public:
     Worker(Bot* bot)
         : pMittens(bot) {}
 private:
-    std::unordered_set<std::string> queuedOrRunningPuuids; // tracks puuids that are either queued or currently being processed to prevent duplicates
-    std::string activePuuid; 
-	bool isRunning = false;
+    std::unordered_set<std::string> queuedOrRunningPuuids; // tracks PUUIDs in the queue or currently active to prevent duplicates
+    std::string activePuuid;
+    bool isRunning = false;
     std::queue<std::shared_ptr<Player>> playerQueue; // queue of players waiting to be processed
     std::mutex queueMutex;
     Bot* pMittens;
