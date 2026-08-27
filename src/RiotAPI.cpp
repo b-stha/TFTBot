@@ -65,13 +65,12 @@ void Riot::fetchMatchID(std::shared_ptr<Player> pPlayer, std::function<void(bool
 			}
 
 			std::string latestMatchID = matchIDJson[0].get<std::string>();
-			if (latestMatchID == pPlayer->getCurrMatchID()) {
+			if (latestMatchID == pPlayer->getCurrMatchID() || latestMatchID == pPlayer->getPendingMatchID()) {
 				if (next) next(false);
 				return;
 			}
 
-			pPlayer->setPrevMatch(pPlayer->getCurrMatchID());
-			pPlayer->setCurrMatch(latestMatchID);
+			pPlayer->setPendingMatchID(latestMatchID);
 			if (next) next(true);
 		} catch (const json::exception& e) {
 			// Covers parse failures and any missing/malformed fields in the response.
@@ -116,6 +115,13 @@ void Riot::fetchInfo(std::shared_ptr<Player> pPlayer, std::function<void(bool)> 
 				std::cout << "[Riot API] fetchInfo: PUUID " << pPlayer->getPUUID() << " not found in match participants." << std::endl;
 				if (next) next(false);
 				return;
+			}
+
+			std::string pendingMatchID = pPlayer->getPendingMatchID();
+			if (!pendingMatchID.empty()) {
+				pPlayer->setPrevMatch(pPlayer->getCurrMatchID());
+				pPlayer->setCurrMatch(pendingMatchID);
+				pPlayer->setPendingMatchID("");
 			}
 
 			pPlayer->setMatchInfo(matchInfo);

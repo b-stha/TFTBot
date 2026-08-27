@@ -34,16 +34,19 @@ void Worker::startTask() {
 
     pMittens->getRiotObj().fetchMatchID(currPlayer, [this, currPlayer, finishSafely](bool matchFetched) mutable {
         if (!matchFetched) {
+            currPlayer->setPendingMatchID("");
             finishSafely();
             return;
         }
         pMittens->getRiotObj().fetchLeague(currPlayer, [this, currPlayer, finishSafely](bool leagueFetched) mutable {
             if (!leagueFetched) {
+                currPlayer->setPendingMatchID("");
                 finishSafely();
                 return;
             }
             pMittens->getRiotObj().fetchInfo(currPlayer, [this, currPlayer, finishSafely](bool infoFetched) mutable {
                 if (!infoFetched) {
+                    currPlayer->setPendingMatchID("");
                     finishSafely();
                     return;
                 }

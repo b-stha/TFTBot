@@ -29,9 +29,19 @@ void Player::setCurrMatch(std::string matchID) {
 	currMatchID = matchID;
 };
 
+void Player::setPendingMatchID(std::string matchID) {
+	std::lock_guard<std::mutex> lock(playerMutex);
+	pendingMatchID = matchID;
+};
+
 std::string Player::getCurrMatchID() const {
 	std::lock_guard<std::mutex> lock(playerMutex);
 	return currMatchID;
+};
+
+std::string Player::getPendingMatchID() const {
+	std::lock_guard<std::mutex> lock(playerMutex);
+	return pendingMatchID;
 };
 
 std::vector<std::string> Player::getFullName() const {

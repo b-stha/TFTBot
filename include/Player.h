@@ -27,6 +27,7 @@ public:
 	Player(std::string inputPuuid);
 	// getter functions
 	std::string getCurrMatchID() const;
+	std::string getPendingMatchID() const;
 	std::string getPUUID() const;
 	std::vector<int> getTime() const;
 	std::string getSummonerID() const; // obsolete, can be removed (?)
@@ -45,6 +46,7 @@ public:
 	void setNameTag(std::string inputName, std::string inputTag);
 	void setPrevMatch(std::string matchID);
 	void setCurrMatch(std::string matchID);
+	void setPendingMatchID(std::string matchID);
 	void setChannelID(dpp::snowflake inputChannelID);
 	void setSummonerID(std::string summonerID); // obsolete, can be removed (?)
 	void setPlayerLeague(const std::vector<League>& inLeague);
@@ -63,6 +65,7 @@ private:
 	std::string puuid;
 	std::string prevMatchID = "";
 	std::string currMatchID = "";
+	std::string pendingMatchID = "";
 	std::string userName = "";
 	std::string tagLine = "";
 	std::string summonerID; // obsolete, can be removed (?)
