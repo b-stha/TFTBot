@@ -117,7 +117,10 @@ void Bot::registerCommands() {
 
 void Bot::readyHandler() {
     botCluster.on_ready([this](const dpp::ready_t& event) {
-		std::thread([this]() {
+		if (dataInitThread.joinable() || dataInitFailed.load() || isReady.load()) {
+			return;
+		}
+		dataInitThread = std::thread([this]() {
 			auto fData = Data::asyncCreateData(botCluster);
 			try {
 				auto readyData = fData.get();
@@ -125,10 +128,11 @@ void Bot::readyHandler() {
 				this->isReady.store(true);
 				std::cout << "Data initialization succeeded." << std::endl;
 			} catch (const std::exception& e) {
+				dataInitFailed.store(true);
 				std::cerr << "Data initialization failed: " << e.what() << std::endl;
 			}
 
-		}).detach();
+		});
 
         if (dpp::run_once<struct register_bot_commands>()) {
             botCluster.global_command_create(dpp::slashcommand("ping", "Ping pong!", botCluster.me.id));
@@ -431,4 +435,19 @@ std::vector<std::shared_ptr<Player>> Bot::getUserSnapshot() {
 		snapshot.emplace_back(playerPtr);
 	}
 	return snapshot;
+}
+
+Bot::~Bot() {
+	shutdown();
+}
+
+void Bot::shutdown() {
+	if (shuttingDown.exchange(true)) {
+		return;
+	}
+	pWorker->shutdown();
+	botCluster.shutdown();
+	if (dataInitThread.joinable()) {
+		dataInitThread.join();
+	}
 }

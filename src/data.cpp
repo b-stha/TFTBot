@@ -94,71 +94,49 @@ std::unordered_map<std::string, TraitInfo> Data::loadTraitData(const nlohmann::j
 }
 
 std::future<void> Data::loadSetData(dpp::cluster& cluster) {
-	auto pPromise = std::make_shared<std::promise<void>>();
-	auto future = pPromise->get_future();
-
-	std::string url = "https://raw.communitydragon.org/latest/cdragon/tft/en_us.json";
-	cluster.request(url, dpp::m_get, [this, pPromise, url](const dpp::http_request_completion_t& http) mutable {
-		if (http.status != 200 ) {
-			try {
-				throw std::runtime_error("HTTP request failed with status: " + std::to_string(http.status) + 
-				"\nurl: " + url +
-				"\nbody: " + http.body);
-			} catch (...) {
-				pPromise->set_exception(std::current_exception());
-			}
-    		return;
-		}
-		nlohmann::json dataJson;
-		try {
-			dataJson = nlohmann::json::parse(http.body);
-		} catch (const nlohmann::json::parse_error& e) {
-			std::cerr << "JSON parse error for url:" << url << " -  " << e.what()
-					<< "\nbody: " << http.body << std::endl;
-			return;
-		}
-		std::string latestSet = "17";
-
-		this->unitData = loadUnitData(dataJson, latestSet);
-		this->traitData = loadTraitData(dataJson, latestSet);
-
-		pPromise->set_value();
-	});
-	return future;
+    auto pPromise = std::make_shared<std::promise<void>>();
+    auto future = pPromise->get_future();
+    std::string url = "https://raw.communitydragon.org/latest/cdragon/tft/en_us.json";
+    cluster.request(url, dpp::m_get, [this, pPromise](const dpp::http_request_completion_t& http) mutable {
+        if (http.status != 200) {
+            pPromise->set_exception(std::make_exception_ptr(std::runtime_error("HTTP request failed with status: " + std::to_string(http.status))));
+            return;
+        }
+        try {
+            nlohmann::json dataJson = nlohmann::json::parse(http.body);
+            std::string latestSet = "17";
+            this->unitData = loadUnitData(dataJson, latestSet);
+            this->traitData = loadTraitData(dataJson, latestSet);
+            pPromise->set_value();
+        } catch (...) {
+            pPromise->set_exception(std::current_exception());
+        }
+    });
+    return future;
 }
 
 std::future<void> Data::loadTacticianData(dpp::cluster& cluster) {
-	auto pPromise = std::make_shared<std::promise<void>>();
-	auto future = pPromise->get_future();
-
-	std::string url = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/companions.json";
-	cluster.request(url, dpp::m_get, [this, pPromise, url](const dpp::http_request_completion_t& http) mutable {
-		if (http.status != 200 ) {
-			try {
-				throw std::runtime_error("HTTP request failed with status: " + std::to_string(http.status) + 
-				"\nurl: " + url +
-				"\nbody: " + http.body);
-			} catch (...) {
-				pPromise->set_exception(std::current_exception());
-			}
-			return;
-		}
-		nlohmann::json tacticianJson;
-		try {
-			tacticianJson = nlohmann::json::parse(http.body);
-		} catch (const nlohmann::json::parse_error& e) {
-			std::cerr << "JSON parse error for url:" << url << " -  " << e.what()
-					<< "\nbody: " << http.body << std::endl;
-			return;
-		}
-		for (auto& tactician : tacticianJson) {
-			int id = tactician["itemId"].get<int>();
-			std::string icon = tactician["loadoutsIcon"].get<std::string>();
-			this->tacticianMap[id] = icon;
-		}
-		pPromise->set_value();
-	});
-	return future;
+    auto pPromise = std::make_shared<std::promise<void>>();
+    auto future = pPromise->get_future();
+    std::string url = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/companions.json";
+    cluster.request(url, dpp::m_get, [this, pPromise](const dpp::http_request_completion_t& http) mutable {
+        if (http.status != 200) {
+            pPromise->set_exception(std::make_exception_ptr(std::runtime_error("HTTP request failed with status: " + std::to_string(http.status))));
+            return;
+        }
+        try {
+            nlohmann::json tacticianJson = nlohmann::json::parse(http.body);
+            for (const auto& tactician : tacticianJson) {
+                int id = tactician.at("itemId").get<int>();
+                std::string icon = tactician.at("loadoutsIcon").get<std::string>();
+                this->tacticianMap[id] = icon;
+            }
+            pPromise->set_value();
+        } catch (...) {
+            pPromise->set_exception(std::current_exception());
+        }
+    });
+    return future;
 }
 
 std::future<void> Data::loadData(dpp::cluster& cluster) {

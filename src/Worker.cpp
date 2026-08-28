@@ -8,13 +8,14 @@ void Worker::startTask() {
     std::shared_ptr<Player> currPlayer = nullptr;
     {
         std::lock_guard<std::mutex> lock(queueMutex);
-        if (isRunning || playerQueue.empty()) {
+        if (shuttingDown || isRunning || playerQueue.empty()) {
             return;
         }
 
         currPlayer = playerQueue.front();
         if (!currPlayer || currPlayer->getPUUID().empty()) {
             playerQueue.pop();
+            queueIdle.notify_all();
             return;
         }
 
@@ -81,12 +82,24 @@ void Worker::finishTask() {
             activePuuid.clear();
         }
         isRunning = false;
-        shouldStartAnother = !playerQueue.empty();
+        shouldStartAnother = !shuttingDown && !playerQueue.empty();
     }
 
+    queueIdle.notify_all();
     if (shouldStartAnother) {
         startTask();
     }
+}
+
+void Worker::shutdown() {
+    std::unique_lock<std::mutex> lock(queueMutex);
+    shuttingDown = true;
+    while (!playerQueue.empty()) {
+        playerQueue.pop();
+    }
+    queuedOrRunningPuuids.clear();
+    queueIdle.wait(lock, [this]() { return !isRunning; });
+    activePuuid.clear();
 }
 
 std::shared_ptr<Data> Worker::getData() const {
@@ -102,7 +115,7 @@ bool Worker::enqueue(const std::shared_ptr<Player>& player) {
     }
 
     std::lock_guard<std::mutex> lock(queueMutex);
-    if (queuedOrRunningPuuids.contains(puuid)) {
+    if (shuttingDown || queuedOrRunningPuuids.contains(puuid)) {
         return false;
     }
 

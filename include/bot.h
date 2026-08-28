@@ -13,6 +13,7 @@ Contains some helper functions for formatting data into Discord embeds.
 #include "RiotAPI.h"
 #include <unordered_map>
 #include <mutex>
+#include <thread>
 
 class Data;
 class Player;
@@ -21,6 +22,7 @@ struct Worker;
 class Bot {
 public:
     Bot(const std::string& botToken, const std::string& riotApiKey);
+    ~Bot();
     dpp::cluster& getBotCluster() { return botCluster; }
     Riot& getRiotObj() { return riotAPI; }
     std::vector<std::shared_ptr<Player>> getUserSnapshot(); // Returns a snapshot of the current users to avoid locking.
@@ -34,6 +36,8 @@ public:
     std::shared_ptr<Data> getLoadedData() const { return pLoadedData; }
     Worker* getWorker() { return pWorker.get(); }
     void run();
+    void shutdown();
+    bool dataInitializationFailed() const { return dataInitFailed.load(); }
 private:
     void registerCommands();
     void readyHandler();
@@ -42,8 +46,11 @@ private:
     std::unordered_map<std::string, std::shared_ptr<Player>> userMap;
     std::unique_ptr<Worker> pWorker;
     std::shared_ptr<Data> pLoadedData;
-    std::atomic<bool> isReady;
+    std::atomic<bool> isReady{false};
     std::mutex userMapMutex;
+    std::thread dataInitThread;
+    std::atomic<bool> dataInitFailed{false};
+    std::atomic<bool> shuttingDown{false};
 };
 
 #endif
