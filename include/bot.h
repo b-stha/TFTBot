@@ -11,6 +11,7 @@ Contains some helper functions for formatting data into Discord embeds.
 #include <dpp/dpp.h>
 #include <memory>
 #include "RiotAPI.h"
+#include "Persistence.h"
 #include <unordered_map>
 #include <mutex>
 #include <thread>
@@ -43,6 +44,7 @@ private:
     void readyHandler();
     dpp::cluster botCluster;
     Riot riotAPI;
+    Persistence persistence;
     std::unordered_map<std::string, std::shared_ptr<Player>> userMap;
     std::unique_ptr<Worker> pWorker;
     std::shared_ptr<Data> pLoadedData;

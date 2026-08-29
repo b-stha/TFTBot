@@ -6,7 +6,7 @@
 #include "Worker.h"
 
 Bot::Bot(const std::string& botToken, const std::string& riotApiKey)
-		: botCluster(botToken, dpp::i_default_intents | dpp::i_message_content), riotAPI(botCluster, riotApiKey), pWorker(std::make_unique<Worker>(this)){
+		: botCluster(botToken, dpp::i_default_intents | dpp::i_message_content), riotAPI(botCluster, riotApiKey), persistence("mittens.db"), pWorker(std::make_unique<Worker>(this)){
 	;
 	botCluster.on_log(dpp::utility::cout_logger());
 	readyHandler();
@@ -101,7 +101,31 @@ void Bot::registerCommands() {
 					} else {
 						eventCopy.reply(name + " already had " + queueOpt + ".");
 					}
+					if (this->persistence.isOpen()) {
+						PersistedPlayer persistedPlayer;
+						persistedPlayer.puuid = pPlayer->getPUUID();
+						persistedPlayer.name = userInputArr[0];
+						persistedPlayer.tag = userInputArr[1];
+						persistedPlayer.channelID = static_cast<std::uint64_t>(currChannel);
+						persistedPlayer.currentMatchID = pPlayer->getCurrMatchID();
+						for (const int queueID : pPlayer->getAddedQueues()) {
+							persistedPlayer.queueIDs.push_back(queueID);
+						}
+						this->persistence.savePlayer(persistedPlayer);
+					}
 					return;
+				}
+				if (this->persistence.isOpen()) {
+					PersistedPlayer persistedPlayer;
+					persistedPlayer.puuid = pPlayer->getPUUID();
+					persistedPlayer.name = userInputArr[0];
+					persistedPlayer.tag = userInputArr[1];
+					persistedPlayer.channelID = static_cast<std::uint64_t>(currChannel);
+					persistedPlayer.currentMatchID = pPlayer->getCurrMatchID();
+					for (const int queueID : pPlayer->getAddedQueues()) {
+						persistedPlayer.queueIDs.push_back(queueID);
+					}
+					this->persistence.savePlayer(persistedPlayer);
 				}
 				riotAPI.fetchLeague(pPlayer, [eventCopy, name, queueOpt](bool ok) mutable {
 					if (!ok) {
@@ -125,6 +149,22 @@ void Bot::readyHandler() {
 			try {
 				auto readyData = fData.get();
 				this->pLoadedData = std::move(readyData);
+				if (this->persistence.isOpen()) {
+					std::vector<PersistedPlayer> persistedPlayers = this->persistence.loadPlayers();
+					for (const PersistedPlayer& persistedPlayer : persistedPlayers) {
+						std::shared_ptr<Player> pPlayer = std::make_shared<Player>(persistedPlayer.puuid);
+						pPlayer->setNameTag(persistedPlayer.name, persistedPlayer.tag);
+						pPlayer->setChannelID(static_cast<dpp::snowflake>(persistedPlayer.channelID));
+						pPlayer->setCurrMatch(persistedPlayer.currentMatchID);
+						for (int queueID : persistedPlayer.queueIDs) {
+							pPlayer->addQueue(queueID);
+						}
+						{
+							std::lock_guard<std::mutex> lock(this->userMapMutex);
+							this->userMap[persistedPlayer.puuid] = pPlayer;
+						}
+					}
+				}
 				this->isReady.store(true);
 				std::cout << "Data initialization succeeded." << std::endl;
 			} catch (const std::exception& e) {
