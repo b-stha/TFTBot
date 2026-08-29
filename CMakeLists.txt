@@ -81,3 +81,34 @@ target_link_libraries(data_writer PRIVATE
 	OpenSSL::SSL
 	OpenSSL::Crypto
 )
+
+enable_testing()
+
+
+add_executable(mittens_tests
+        tests/test_helpers.cpp
+        src/helpers.cpp
+        src/Player.cpp
+        src/data.cpp
+        src/MatchInfo.cpp
+)
+
+set_target_properties(mittens_tests PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED ON
+)
+
+target_include_directories(mittens_tests PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${OPENSSL_INCLUDE_DIR}
+        ${nlohmann_json_INCLUDE_DIRS}
+)
+
+target_link_libraries(mittens_tests PRIVATE
+        dpp::dpp
+        OpenSSL::SSL
+        OpenSSL::Crypto
+        nlohmann_json::nlohmann_json
+)
+
+add_test(NAME mittens_tests COMMAND mittens_tests)

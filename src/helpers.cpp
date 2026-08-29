@@ -14,8 +14,16 @@ std::string operator * (std::string a, unsigned int b) {
 }
 
 std::string setStrWidth(const std::string& str, int len) {
+	if (len <= 0) {
+		return "";
+	}
+
+	if (static_cast<int>(str.length()) >= len) {
+		return str.substr(0, static_cast<size_t>(len));
+	}
+
 	std::string result = str;
-	int spaces_to_add = len - str.length();
+	int spaces_to_add = len - static_cast<int>(str.length());
 	for (int i = 0; i < spaces_to_add; ++i) {
 		result += " ";
 	}
