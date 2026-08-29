@@ -5,6 +5,11 @@ project(Mittens VERSION 1.0 DESCRIPTION "Mittens: Discord bot that outputs your 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+include(FetchContent)
+FetchContent_Declare(sqlite3 URL https://www.sqlite.org/2025/sqlite-amalgamation-3500000.zip)
+FetchContent_MakeAvailable(sqlite3)
+add_library(sqlite3 STATIC ${sqlite3_SOURCE_DIR}/sqlite3.c)
+target_include_directories(sqlite3 PUBLIC ${sqlite3_SOURCE_DIR})
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/)
 
@@ -28,6 +33,7 @@ add_executable(${PROJECT_NAME}
         src/main.cpp
         src/Worker.cpp
         src/MatchInfo.cpp
+        src/Persistence.cpp
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -47,6 +53,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	OpenSSL::SSL
 	OpenSSL::Crypto
         nlohmann_json::nlohmann_json
+        sqlite3
 )
 
 add_executable(data_writer EXCLUDE_FROM_ALL

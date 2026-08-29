@@ -7,7 +7,6 @@ Written in C++, using the DPP library. Currently a work in progress.
 Configuration:
 - Set `BOT_TOKEN` to the Discord bot token
 - Set `TFT_APIKEY` to the Riot API key
-- `include/apikeys.h` is no longer used by the application
 
 Features:
 - Post-game information
